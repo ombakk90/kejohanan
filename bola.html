@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carta Kalah Mati Kejohanan Pro</title>
+    <style>
+        :root {
+            --bg-color: #0b132b;
+            --card-bg: #1c2541;
+            --accent-gold: #f1c40f;
+            --accent-bronze: #cd7f32;
+            --winner-color: #2ecc71;
+            --line-color: #3a506b;
+            --line-active: #00b4d8;
+            --text-main: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px 10px;
+            overflow-x: auto;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.4rem;
+            margin-bottom: 25px;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 12px rgba(241, 196, 15, 0.4);
+        }
+
+        /* CONTAINER DENGAN SVG OVERLAY */
+        .bracket-wrapper {
+            position: relative;
+            display: flex;
+            gap: 50px; /* Jarak antara pusingan untuk garisan SVG */
+            min-width: max-content;
+            padding: 20px 30px;
+            justify-content: center;
+            align-items: stretch;
+        }
+
+        /* CANVAS GARISAN SVG */
+        #bracket-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .round-column {
+            display: flex;
+            flex-direction: column;
+            width: 180px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .round-title {
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+
+        .matchups-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            flex-grow: 1;
+        }
+
+        .match-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .matchup {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 6px 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            position: relative;
+            transition: transform 0.2s ease;
+        }
+
+        .matchup.third-place {
+            border-color: var(--accent-bronze);
+            background: rgba(205, 127, 50, 0.1);
+        }
+
+        /* TEAM ROWS & INPUTS */
+        .team-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 4px 0;
+            gap: 6px;
+            padding: 3px 5px;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+
+        .team-info {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .team-name {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-main);
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            width: 100%;
+            outline: none;
+        }
+
+        .team-name:focus {
+            border-color: var(--accent-gold);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .score-input {
+            width: 32px;
+            height: 28px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-radius: 4px;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+
+        .score-input::-webkit-outer-spin-button,
+        .score-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .score-input:focus {
+            border-color: var(--accent-gold);
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .pen-input {
+            width: 26px;
+            height: 24px;
+            background: rgba(231, 76, 60, 0.25);
+            border: 1px solid #e74c3c;
+            color: #ffcccc;
+            text-align: center;
+            font-size: 0.75rem;
+            border-radius: 3px;
+            outline: none;
+            display: none;
+            margin-left: 3px;
+            -moz-appearance: textfield;
+        }
+
+        .pen-input::-webkit-outer-spin-button,
+        .pen-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .matchup.tied .pen-input {
+            display: inline-block;
+        }
+
+        .winner {
+            background-color: rgba(46, 204, 113, 0.2) !important;
+        }
+
+        .winner .team-name {
+            color: var(--winner-color);
+            font-weight: bold;
+            border-color: rgba(46, 204, 113, 0.5);
+        }
+
+        /* KOTAK TROFI */
+        .champion-box {
+            text-align: center;
+            background: rgba(241, 196, 15, 0.1);
+            border: 2px dashed var(--accent-gold);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+
+        .champion-box h3 {
+            color: var(--accent-gold);
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .champion-name {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #fff;
+            background: rgba(0,0,0,0.5);
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid var(--accent-gold);
+        }
+
+        .third-box {
+            text-align: center;
+            background: rgba(205, 127, 50, 0.1);
+            border: 1px dashed var(--accent-bronze);
+            padding: 8px;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .third-box h3 {
+            color: var(--accent-bronze);
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .third-name {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #fff;
+            background: rgba(0,0,0,0.5);
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid var(--accent-bronze);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Carta Kalah Mati Kejohanan Pro</h1>
+
+    <div class="bracket-wrapper" id="bracket-wrapper">
+        <!-- SVG Canvas untuk Melukis Garisan Pro -->
+        <svg id="bracket-lines"></svg>
+        
+        <!-- Pusingan 16 -->
+        <div class="round-column">
+            <div class="round-title">Pusingan 16</div>
+            <div class="matchups-container">
+                
+                <div class="match-wrapper">
+                    <div class="matchup" id="m1" data-next="q1" data-slot="0">
+                        <div class="team-row" id="m1-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Uruguay" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="m1-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Portugal" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-wrapper">
+                    <div class="matchup" id="m2" data-next="q1" data-slot="1">
+                        <div class="team-row" id="m2-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="France" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="m2-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Argentina" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-wrapper">
+                    <div class="matchup" id="m3" data-next="q2" data-slot="0">
+                        <div class="team-row" id="m3-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Brazil" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="m3-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Mexico" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-wrapper">
+                    <div class="matchup" id="m4" data-next="q2" data-slot="1">
+                        <div class="team-row" id="m4-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Belgium" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="m4-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Japan" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-wrapper">
+                    <div class="matchup" id="m5" data-next="q3" data-slot="0">
+                        <div class="team-row" id="m5-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Spain" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="m5-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Russia" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-wrapper">
+                    <div class="matchup" id="m6" data-next="q3" data-slot="1">
+                        <div class="team-row" id="m6-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Croatia" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="m6-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Denmark" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-wrapper">
+                    <div class="matchup" id="m7" data-next="q4" data-slot="0">
+                        <div class="team-row" id="m7-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Sweden" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="m7-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Switzerland" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-wrapper">
+                    <div class="matchup" id="m8" data-next="q4" data-slot="1">
+                        <div class="team-row" id="m8-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Colombia" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="m8-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="England" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Suku Akhir -->
+        <div class="round-column">
+            <div class="round-title">Suku Akhir</div>
+            <div class="matchups-container">
+                
+                <div class="match-wrapper">
+                    <div class="matchup" id="q1" data-next="s1" data-slot="0">
+                        <div class="team-row" id="q1-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang 1" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="q1-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang 2" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-wrapper">
+                    <div class="matchup" id="q2" data-next="s1" data-slot="1">
+                        <div class="team-row" id="q2-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang 3" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="q2-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang 4" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-wrapper">
+                    <div class="matchup" id="q3" data-next="s2" data-slot="0">
+                        <div class="team-row" id="q3-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang 5" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="q3-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang 6" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-wrapper">
+                    <div class="matchup" id="q4" data-next="s2" data-slot="1">
+                        <div class="team-row" id="q4-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang 7" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="q4-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang 8" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Separuh Akhir -->
+        <div class="round-column">
+            <div class="round-title">Separuh Akhir</div>
+            <div class="matchups-container">
+                
+                <div class="match-wrapper">
+                    <div class="matchup" id="s1" data-next="f1" data-loser-next="t1" data-slot="0">
+                        <div class="team-row" id="s1-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang Suku 1" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="s1-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang Suku 2" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-wrapper">
+                    <div class="matchup" id="s2" data-next="f1" data-loser-next="t1" data-slot="1">
+                        <div class="team-row" id="s2-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang Suku 3" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="s2-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang Suku 4" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Akhir & Tempat Ke-3 -->
+        <div class="round-column">
+            <div class="round-title">Perlawanan Akhir</div>
+            <div class="matchups-container" style="justify-content: flex-start;">
+                
+                <div class="match-wrapper" style="margin-top: 40px;">
+                    <div class="matchup" id="f1" data-next="champion" data-slot="0">
+                        <div class="team-row" id="f1-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang Semi 1" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="f1-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Pemenang Semi 2" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="champion-box">
+                    <h3>🏆 Juara</h3>
+                    <div class="champion-name" id="champion-display">-</div>
+                </div>
+
+                <div class="round-title" style="margin-top: 25px; color: var(--accent-bronze); border-color: rgba(205, 127, 50, 0.4);">Tempat Ke-3</div>
+                
+                <div class="match-wrapper">
+                    <div class="matchup third-place" id="t1" data-next="third" data-slot="0">
+                        <div class="team-row" id="t1-t0">
+                            <div class="team-info"><input type="text" class="team-name" value="Kalah Semi 1" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                        <div class="team-row" id="t1-t1">
+                            <div class="team-info"><input type="text" class="team-name" value="Kalah Semi 2" oninput="updateBracket()"></div>
+                            <div><input type="number" class="score-input" min="0" oninput="updateBracket()"><input type="number" class="pen-input" min="0" placeholder="P" oninput="updateBracket()"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="third-box">
+                    <h3>🥉 Tempat Ke-3</h3>
+                    <div class="third-name" id="third-display">-</div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function drawLines() {
+            const svg = document.getElementById('bracket-lines');
+            const wrapper = document.getElementById('bracket-wrapper');
+            const wrapperRect = wrapper.getBoundingClientRect();
+            
+            svg.setAttribute('width', wrapperRect.width);
+            svg.setAttribute('height', wrapperRect.height);
+            svg.innerHTML = ''; // Clear existing lines
+
+            const connections = [
+                // Pusingan 16 ke Suku Akhir
+                { from: 'm1', to: 'q1' },
+                { from: 'm2', to: 'q1' },
+                { from: 'm3', to: 'q2' },
+                { from: 'm4', to: 'q2' },
+                { from: 'm5', to: 'q3' },
+                { from: 'm6', to: 'q3' },
+                { from: 'm7', to: 'q4' },
+                { from: 'm8', to: 'q4' },
+                // Suku Akhir ke Separuh Akhir
+                { from: 'q1', to: 's1' },
+                { from: 'q2', to: 's1' },
+                { from: 'q3', to: 's2' },
+                { from: 'q4', to: 's2' },
+                // Separuh Akhir ke Akhir
+                { from: 's1', to: 'f1' },
+                { from: 's2', to: 'f1' }
+            ];
+
+            connections.forEach(conn => {
+                const elFrom = document.getElementById(conn.from);
+                const elTo = document.getElementById(conn.to);
+
+                if (!elFrom || !elTo) return;
+
+                const rectFrom = elFrom.getBoundingClientRect();
+                const rectTo = elTo.getBoundingClientRect();
+
+                // Dapatkan titik tengah
+                const x1 = rectFrom.right - wrapperRect.left;
+                const y1 = rectFrom.top + (rectFrom.height / 2) - wrapperRect.top;
+                
+                const x2 = rectTo.left - wrapperRect.left;
+                const y2 = rectTo.top + (rectTo.height / 2) - wrapperRect.top;
+
+                const midX = x1 + (x2 - x1) / 2;
+
+                // Periksa sama ada perlawanan dari (from) sudah ada pemenang
+                const isWinner = elFrom.querySelector('.winner') !== null;
+                const lineColor = isWinner ? '#00b4d8' : '#3a506b';
+                const strokeWidth = isWinner ? '2.5' : '1.5';
+
+                // Lukis garisan siku (S-Shape / Orthogonal)
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const d = `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
+                
+                path.setAttribute('d', d);
+                path.setAttribute('stroke', lineColor);
+                path.setAttribute('stroke-width', strokeWidth);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('stroke-linejoin', 'round');
+
+                svg.appendChild(path);
+            });
+        }
+
+        function updateBracket() {
+            const matches = ['m1','m2','m3','m4','m5','m6','m7','m8','q1','q2','q3','q4','s1','s2','f1','t1'];
+
+            matches.forEach(matchId => {
+                const matchupEl = document.getElementById(matchId);
+                const t0Row = document.getElementById(matchId + '-t0');
+                const t1Row = document.getElementById(matchId + '-t1');
+                
+                const name0 = t0Row.querySelector('.team-name').value;
+                const name1 = t1Row.querySelector('.team-name').value;
+                
+                const score0Input = t0Row.querySelector('.score-input');
+                const score1Input = t1Row.querySelector('.score-input');
+                
+                const pen0Input = t0Row.querySelector('.pen-input');
+                const pen1Input = t1Row.querySelector('.pen-input');
+
+                t0Row.classList.remove('winner');
+                t1Row.classList.remove('winner');
+                matchupEl.classList.remove('tied');
+
+                const s0 = score0Input.value;
+                const s1 = score1Input.value;
+
+                let winnerName = "";
+                let loserName = "";
+
+                if (s0 !== "" && s1 !== "") {
+                    const numS0 = parseInt(s0);
+                    const numS1 = parseInt(s1);
+
+                    if (numS0 > numS1) {
+                        winnerName = name0;
+                        loserName = name1;
+                        t0Row.classList.add('winner');
+                    } else if (numS1 > numS0) {
+                        winnerName = name1;
+                        loserName = name0;
+                        t1Row.classList.add('winner');
+                    } else {
+                        // Seri / Tie
+                        matchupEl.classList.add('tied');
+                        const p0 = pen0Input.value;
+                        const p1 = pen1Input.value;
+
+                        if (p0 !== "" && p1 !== "") {
+                            const numP0 = parseInt(p0);
+                            const numP1 = parseInt(p1);
+                            if (numP0 > numP1) {
+                                winnerName = name0;
+                                loserName = name1;
+                                t0Row.classList.add('winner');
+                            } else if (numP1 > numP0) {
+                                winnerName = name1;
+                                loserName = name0;
+                                t1Row.classList.add('winner');
+                            }
+                        }
+                    }
+                }
+
+                // Hantar pemenang ke pusingan seterusnya
+                const nextMatchId = matchupEl.getAttribute('data-next');
+                const slot = matchupEl.getAttribute('data-slot');
+
+                if (nextMatchId && nextMatchId !== 'champion' && nextMatchId !== 'third') {
+                    const nextTeamInput = document.getElementById(nextMatchId + '-t' + slot).querySelector('.team-name');
+                    if (nextTeamInput) {
+                        nextTeamInput.value = winnerName;
+                    }
+                } else if (nextMatchId === 'champion') {
+                    document.getElementById('champion-display').innerText = winnerName || "-";
+                } else if (nextMatchId === 'third') {
+                    document.getElementById('third-display').innerText = winnerName || "-";
+                }
+
+                // Hantar pasukan kalah ke tempat Ke-3 (Separuh Akhir sahaja)
+                const loserMatchId = matchupEl.getAttribute('data-loser-next');
+                if (loserMatchId) {
+                    const loserTeamInput = document.getElementById(loserMatchId + '-t' + slot).querySelector('.team-name');
+                    if (loserTeamInput) {
+                        loserTeamInput.value = loserName;
+                    }
+                }
+            });
+
+            // Re-draw garisan selepas skor atau carta dikemaskini
+            drawLines();
+        }
+
+        // Lukis garisan apabila halaman selesai dimuatkan & apabila window di-resize
+        window.addEventListener('load', () => {
+            updateBracket();
+            setTimeout(drawLines, 100);
+        });
+        window.addEventListener('resize', drawLines);
+    </script>
+</body>
+</html>
